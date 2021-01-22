@@ -1,4 +1,4 @@
-package org.baeldung
+package uk.ac.ebi
 
 import scala.concurrent.duration._
 
@@ -7,9 +7,15 @@ import io.gatling.http.Predef._
 import io.gatling.jdbc.Predef._
 
 class RecordedSimulation extends Simulation {
+  
+    val dbSNPIds = csv("dbsnp.csv") circular
+    
+    val hgvss = csv("hgvs.csv") circular
+    
 
     val httpProtocol = http
-        .baseUrl("http://computer-database.gatling.io")
+        .baseUrl("http://wp-np2-be:8099/pepvep")
+//        .baseUrl("http://wp-np2-ca:8080/pepvep-service/pepvep")
         .inferHtmlResources(BlackList(""".*\.css""", """.*\.js""", """.*\.ico"""), WhiteList())
         .acceptHeader("text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
         .acceptEncodingHeader("gzip, deflate")
@@ -18,28 +24,33 @@ class RecordedSimulation extends Simulation {
 
 
 
-
     val scn = scenario("RecordedSimulation")
-        .exec(http("request_0")
-            .get("/"))
+        .feed(dbSNPIds)
+        .feed(hgvss)
+        .exec(http("gene_request")
+            .get("/genomic/TDP1"))
         .pause(5)
-        .exec(http("request_1")
-            .get("/computers?f=amstrad"))
+        .exec(http("protein_request")
+            .get("/protein/P21802"))
+        .pause(5)
+        .exec(http("pdbe_request")
+            .get("/structure/6n0d"))
         .pause(4)
-        .exec(http("request_2")
-            .get("/computers/412"))
+        .exec(http("dbsnp_request")
+            .get("/dbSNP/${dbSNPId}?species=homo_sapiens"))
         .pause(2)
-        .exec(http("request_3")
-            .get("/"))
+        .exec(http("hgvs_request")
+            .get("/hgvs/${hgvs}?species=homo_sapiens"))
         .pause(2)
-        .exec(http("request_4")
-            .get("/computers?p=1"))
+        .exec(http("region_request")
+            .get("/region/14%3A89993420-89993421?allele=A%2FG&species=homo_sapiens"))
         .pause(1)
-        .exec(http("request_5")
-            .get("/computers?p=2"))
-        .pause(2)
-        .exec(http("request_6")
-            .get("/computers?p=3"))
+//        .exec(http("request_5")
+//            .post("/dbSNP?species=homo_sapiens"))
+//            .body(StringBody("[\"rs755551706\", \"rs121909224\"]")).asJson
+//        .pause(2)
+//        .exec(http("request_6")
+//            .get("/computers?p=3"))
 
     setUp(scn.inject(atOnceUsers(1))).protocols(httpProtocol)
 }
