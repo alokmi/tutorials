@@ -52,5 +52,5 @@ class RecordedSimulation extends Simulation {
 //        .exec(http("request_6")
 //            .get("/computers?p=3"))
 
-    setUp(scn.inject(atOnceUsers(1))).protocols(httpProtocol)
+    setUp(scn.inject(atOnceUsers(10))).protocols(httpProtocol)
 }
