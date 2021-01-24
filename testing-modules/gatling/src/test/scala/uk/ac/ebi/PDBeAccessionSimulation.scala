@@ -9,7 +9,7 @@ import com.typesafe.config._
 
 class PDBeAccessionSimulation extends Simulation {
 
-  val accessions = csv("data/pdbe_accessions.csv") circular
+  val accessions = csv("pdbe_accessions.csv") circular
   
   val conf = ConfigFactory.load()
   val url = conf.getString("add.pepvep.base.url")
