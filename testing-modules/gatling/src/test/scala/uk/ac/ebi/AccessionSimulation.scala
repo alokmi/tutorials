@@ -8,7 +8,7 @@ import com.typesafe.config._
 
 class AccessionSimulation extends Simulation {
   
-    val accessions = csv("accessions.csv") circular
+    val accessions = csv("data/accessions.csv") circular
     
     val conf = ConfigFactory.load()
     val url = conf.getString("add.pepvep.base.url")

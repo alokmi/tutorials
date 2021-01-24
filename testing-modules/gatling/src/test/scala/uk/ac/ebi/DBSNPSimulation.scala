@@ -9,7 +9,7 @@ import io.gatling.jdbc.Predef._
 
 class DBSNPSimulation extends Simulation {
 
-  val dbSNPIds = csv("dbsnp.csv") circular
+  val dbSNPIds = csv("data/dbsnp.csv") circular
 
   val conf = ConfigFactory.load()
   val url = conf.getString("add.pepvep.base.url")

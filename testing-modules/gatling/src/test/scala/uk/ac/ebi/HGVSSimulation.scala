@@ -9,7 +9,7 @@ import io.gatling.jdbc.Predef._
 
 class HGVSSimulation extends Simulation {
 
-  val hgvss = csv("hgvs.csv") circular
+  val hgvss = csv("data/hgvs.csv") circular
   val conf = ConfigFactory.load()
   val url = conf.getString("add.pepvep.base.url")
   val concurrentConsumer = conf.getInt("add.pepvep.concurrent.user")
