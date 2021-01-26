@@ -21,6 +21,8 @@ class RecordedSimulation extends Simulation {
 
   val dbsnpjsons = csv("dbsnpjson.csv") circular
 
+  val hgvsjsons = csv("hgvsjson.csv") circular
+
   val conf = ConfigFactory.load()
   val url = conf.getString("add.pepvep.base.url")
   val concurrentConsumer = conf.getInt("add.pepvep.concurrent.user")
@@ -40,6 +42,7 @@ class RecordedSimulation extends Simulation {
     .feed(geneNames)
     .feed(pdbeaccessions)
     .feed(dbsnpjsons)
+    .feed(hgvsjsons)
     .forever {
       exec(http("gene_request_bulk")
         .get("/genomic/${geneName}"))
@@ -53,9 +56,12 @@ class RecordedSimulation extends Simulation {
           .get("/hgvs/${hgvs}?species=homo_sapiens"))
         .exec(http("region_request_bulk")
           .get("/region/14%3A89993420-89993421?allele=A%2FG&species=homo_sapiens"))
-      exec(http("dbsnp_post_request_bulk")
-        .post("/dbSNP")
-        .body(StringBody("${dbsnpjson}")).asJson)
+        .exec(http("dbsnp_post_request_bulk")
+          .post("/dbSNP")
+          .body(StringBody("${dbsnpjson}")).asJson)
+        .exec(http("hgvs_post_request_bulk")
+          .post("/hgvs")
+          .body(StringBody("${hgvsjson}")).asJson)
     }
 
   setUp(scn.inject(atOnceUsers(concurrentConsumer))).protocols(httpProtocol).maxDuration(conf.getInt("add.run.maxDuration") minutes)
