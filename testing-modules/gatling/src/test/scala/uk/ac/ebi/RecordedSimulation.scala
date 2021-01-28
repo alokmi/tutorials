@@ -1,10 +1,10 @@
 package uk.ac.ebi
 
-import scala.concurrent.duration._
-
 import io.gatling.core.Predef._
+import io.gatling.core.scenario.Simulation
+import io.gatling.core.structure.ChainBuilder
 import io.gatling.http.Predef._
-import io.gatling.jdbc.Predef._
+import scala.concurrent.duration._
 import com.typesafe.config._
 
 class RecordedSimulation extends Simulation {
@@ -35,17 +35,17 @@ class RecordedSimulation extends Simulation {
     .acceptLanguageHeader("it-IT,it;q=0.8,en-US;q=0.5,en;q=0.3")
     .userAgentHeader("Mozilla/5.0 (Windows NT 10.0; WOW64; rv:46.0) Gecko/20100101 Firefox/46.0")
 
-  val scn = scenario("RecordedSimulation")
-    .feed(dbSNPIds)
-    .feed(hgvss)
-    .feed(accessions)
-    .feed(geneNames)
-    .feed(pdbeaccessions)
-    .feed(dbsnpjsons)
-    .feed(hgvsjsons)
-    .forever {
-      exec(http("gene_request_bulk")
-        .get("/genomic/${geneName}"))
+  def getRequest(): ChainBuilder = {
+    val request =
+      feed(dbSNPIds)
+        .feed(hgvss)
+        .feed(accessions)
+        .feed(geneNames)
+        .feed(pdbeaccessions)
+        .feed(dbsnpjsons)
+        .feed(hgvsjsons)
+        .exec(http("gene_request_bulk")
+          .get("/genomic/${geneName}"))
         .exec(http("protein_request_bulk")
           .get("/protein/${accession}"))
         .exec(http("pdbe_request_bulk")
@@ -62,7 +62,46 @@ class RecordedSimulation extends Simulation {
         .exec(http("hgvs_post_request_bulk")
           .post("/hgvs")
           .body(StringBody("${hgvsjson}")).asJson)
+
+    return request
+  }
+
+  val requestSeq = Seq(
+    getRequest())
+
+  val instance = scenario("Accession Retrieval Scenario")
+    .forever {
+      exec(requestSeq)
     }
 
-  setUp(scn.inject(atOnceUsers(concurrentConsumer))).protocols(httpProtocol).maxDuration(conf.getInt("add.run.maxDuration") minutes)
+  //  val scn = scenario("RecordedSimulation")
+  //    .feed(dbSNPIds)
+  //    .feed(hgvss)
+  //    .feed(accessions)
+  //    .feed(geneNames)
+  //    .feed(pdbeaccessions)
+  //    .feed(dbsnpjsons)
+  //    .feed(hgvsjsons)
+  //    .forever {
+  //      exec(http("gene_request_bulk")
+  //        .get("/genomic/${geneName}"))
+  //        .exec(http("protein_request_bulk")
+  //          .get("/protein/${accession}"))
+  //        .exec(http("pdbe_request_bulk")
+  //          .get("/structure/${pdbeaccession}"))
+  //        .exec(http("dbsnp_request_bulk")
+  //          .get("/dbSNP/${dbsnp}?species=homo_sapiens"))
+  //        .exec(http("hgvs_request_bulk")
+  //          .get("/hgvs/${hgvs}?species=homo_sapiens"))
+  //        .exec(http("region_request_bulk")
+  //          .get("/region/14%3A89993420-89993421?allele=A%2FG&species=homo_sapiens"))
+  //        .exec(http("dbsnp_post_request_bulk")
+  //          .post("/dbSNP")
+  //          .body(StringBody("${dbsnpjson}")).asJson)
+  //        .exec(http("hgvs_post_request_bulk")
+  //          .post("/hgvs")
+  //          .body(StringBody("${hgvsjson}")).asJson)
+  //    }
+
+  setUp(instance.inject(atOnceUsers(concurrentConsumer))).protocols(httpProtocol).maxDuration(conf.getInt("add.run.maxDuration") minutes)
 }
